@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>CustodiaApp</title>
+    
+    <!-- Fuentes e Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --primary: #6366f1;
+            /* Colores de Roles */
+            --padre: #3b82f6;
+            --padre-bg: #eff6ff;
+            --madre: #ec4899;
+            --madre-bg: #fdf2f8;
+            /* UI */
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- VISTAS --- */
+        .screen {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-top: calc(70px + var(--safe-top));
+            padding-bottom: calc(100px + var(--safe-bottom));
+        }
+        .screen.active { display: block; }
+
+        /* --- HEADER FIJO --- */
+        header {
+            position: fixed; top: 0; width: 100%;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            padding: calc(15px + var(--safe-top)) 20px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #e2e8f0; z-index: 1000;
+        }
+
+        .header-title h1 { font-size: 18px; font-weight: 800; }
+        .header-title p { font-size: 12px; color: var(--text-light); }
+
+        /* --- CALENDARIO MODERNO --- */
+        .cal-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+        }
+        .cal-grid {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
+        }
+        .cal-weekday {
+            text-align: center; font-size: 11px; font-weight: 700; color: var(--text-light); padding-bottom: 10px;
+        }
+        .day {
+            aspect-ratio: 1; background: var(--card); border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 14px; position: relative;
+            transition: transform 0.1s; border: 2px solid transparent;
+        }
+        .day:active { transform: scale(0.9); }
+        .day.today { border-color: var(--primary); }
+        
+        .day.padre { background: var(--padre-bg); color: var(--padre); }
+        .day.madre { background: var(--madre-bg); color: var(--madre); }
+        .day.other-month { opacity: 0.2; }
+
+        .day-dot {
+            width: 4px; height: 4px; background: currentColor; border-radius: 50%;
+            position: absolute; bottom: 6px;
+        }
+
+        /* --- SOLICITUDES / CARDS --- */
+        .card {
+            background: var(--card); border-radius: 16px; padding: 16px;
+            margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid #f1f5f9;
+        }
+        .btn {
+            width: 100%; padding: 14px; border-radius: 12px; border: none;
+            font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: #f1f5f9; color: var(--text); }
+
+        /* --- NAV INFERIOR --- */
+        nav {
+            position: fixed; bottom: 0; width: 100%;
+            background: var(--card); border-top: 1px solid #e2e8f0;
+            padding: 10px 20px calc(10px + var(--safe-bottom));
+            display: flex; justify-content: space-around; z-index: 1000;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            text-decoration: none; color: var(--text-light); font-size: 10px; font-weight: 600;
+        }
+        .nav-item.active { color: var(--primary); }
+        .nav-item i { margin-bottom: 4px; }
+
+        /* --- MODALES --- */
+        .modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: flex-end; z-index: 2000;
+        }
+        .modal.open { display: flex; }
+        .modal-content {
+            background: var(--card); width: 100%; border-radius: 24px 24px 0 0;
+            padding: 30px; padding-bottom: calc(30px + var(--safe-bottom));
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* Estilos de inputs */
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: var(--text-light); margin-bottom: 6px; }
+        input, select {
+            width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #f1f5f9;
+            background: #f1f5f9; font-size: 16px; /* 16px evita zoom en iOS */
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1 id="header-child">Mi Niño/a</h1>
+            <p id="header-role">Cargando...</p>
+        </div>
+        <div id="user-avatar" style="width: 35px; height: 35px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">?</div>
+    </header>
+
+    <!-- PANTALLA: CALENDARIO -->
+    <main id="screen-home" class="screen active">
+        <div class="cal-header">
+            <button class="btn-outline" style="padding: 8px;" onclick="changeMonth(-1)"><i data-lucide="chevron-left"></i></button>
+            <h2 id="month-name">Marzo 2024</h2>
+            <button class="btn-outline" style="padding: 8px;" onclick="changeMonth(1)"><i data-lucide="chevron-right"></i></button>
+        </div>
+        
+        <div class="cal-grid" id="calendar-grid">
+            <!-- Generado por JS -->
+        </div>
+
+        <div style="margin-top: 25px;">
+            <h3>Leyenda</h3>
+            <div style="display: flex; gap: 15px; margin-top: 10px;">
+                <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                    <span style="width: 12px; height: 12px; background: var(--padre-bg); border: 1px solid var(--padre); border-radius: 3px;"></span> Padre
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                    <span style="width: 12px; height: 12px; background: var(--madre-bg); border: 1px solid var(--madre); border-radius: 3px;"></span> Madre
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- PANTALLA: SOLICITUDES -->
+    <main id="screen-requests" class="screen">
+        <h2>Solicitudes de Cambio</h2>
+        <p style="color: var(--text-light); margin-bottom: 20px;">Propón un cambio de días al otro progenitor.</p>
+        
+        <div class="card">
+            <form id="request-form">
+                <div class="input-group">
+                    <label>Día solicitado</label>
+                    <input type="date" id="req-date" required>
+                </div>
+                <div class="input-group">
+                    <label>Motivo</label>
+                    <input type="text" id="req-reason" placeholder="Ej. Cumpleaños abuela">
+                </div>
+                <button type="submit" class="btn btn-primary">Enviar Propuesta</button>
+            </form>
+        </div>
+
+        <div id="active-requests-list">
+            <!-- Lista de solicitudes pendientes -->
+        </div>
+    </main>
+
+    <!-- PANTALLA: AJUSTES -->
+    <main id="screen-settings" class="screen">
+        <h2>Ajustes</h2>
+        <div class="card">
+            <div class="input-group">
+                <label>Nombre del hijo/a</label>
+                <input type="text" id="set-child-name" onchange="updateProfile()">
+            </div>
+            <div class="input-group">
+                <label>Mi Rol</label>
+                <select id="set-user-role" onchange="updateProfile()">
+                    <option value="madre">Madre</option>
+                    <option value="padre">Padre</option>
+                </select>
+            </div>
+        </div>
+        <button onclick="handleLogout()" class="btn btn-outline" style="color: #ef4444;">Cerrar Sesión</button>
+    </main>
+
+    <!-- NAVEGACIÓN -->
+    <nav>
+        <a href="javascript:void(0)" class="nav-item active" onclick="nav('home', this)">
+            <i data-lucide="calendar"></i><span>Hoy</span>
+        </a>
+        <a href="javascript:void(0)" class="nav-item" onclick="nav('requests', this)">
+            <i data-lucide="repeat"></i><span>Cambios</span>
+        </a>
+        <a href="javascript:void(0)" class="nav-item" onclick="nav('settings', this)">
+            <i data-lucide="user"></i><span>Perfil</span>
+        </a>
+    </nav>
+
+    <!-- SCRIPTS -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwgk4_l0zvaCUCgm1CjqqqXjJHr5KPBjc",
+            authDomain: "custodia-familiar.firebaseapp.com",
+            projectId: "custodia-familiar",
+            storageBucket: "custodia-familiar.firebasestorage.app",
+            messagingSenderId: "1038952432258",
+            appId: "1:1038952432258:web:7608d6a48d8ad8308a6a9b"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Estado Global
+        let currentUser = null;
+        let userData = { role: 'madre', childName: 'Mi Niño/a' };
+        let currentViewDate = new Date();
+        let overrides = {};
+
+        // 1. Lógica de Rotación 7-7
+        // Fecha de referencia: Un lunes donde empezó el "Padre"
+        const REFERENCE_MONDAY = new Date(2024, 0, 1); // 1 de Enero 2024
+
+        function getCustody(date) {
+            const dateStr = date.toISOString().split('T')[0];
+            if (overrides[dateStr]) return overrides[dateStr];
+
+            const diffTime = date - REFERENCE_MONDAY;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const diffWeeks = Math.floor(diffDays / 7);
+            
+            // Alterna cada semana
+            return (Math.abs(diffWeeks) % 2 === 0) ? 'padre' : 'madre';
+        }
+
+        // 2. Render de Calendario
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+            
+            const month = currentViewDate.getMonth();
+            const year = currentViewDate.getFullYear();
+            
+            document.getElementById('month-name').textContent = new Intl.DateTimeFormat('es', {month: 'long', year: 'numeric'}).format(currentViewDate);
+
+            // Cabecera de días
+            ['L','M','X','J','V','S','D'].forEach(d => {
+                grid.innerHTML += `<div class="cal-weekday">${d}</div>`;
+            });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const offset = firstDay === 0 ? 6 : firstDay - 1;
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Espacios mes anterior
+            for(let i=0; i<offset; i++) grid.innerHTML += `<div class="day other-month"></div>`;
+
+            // Días del mes
+            for(let d=1; d<=daysInMonth; d++) {
+                const date = new Date(year, month, d, 12);
+                const role = getCustody(date);
+                const isToday = new Date().toDateString() === date.toDateString();
+                
+                grid.innerHTML += `
+                    <div class="day ${role} ${isToday ? 'today' : ''}">
+                        ${d}
+                        <div class="day-dot"></div>
+                    </div>
+                `;
+            }
+        }
+
+        // 3. Navegación
+        function nav(screenId, el) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('screen-' + screenId).classList.add('active');
+            el.classList.add('active');
+            lucide.createIcons();
+        }
+
+        function changeMonth(dir) {
+            currentViewDate.setMonth(currentViewDate.getMonth() + dir);
+            renderCalendar();
+        }
+
+        // 4. Firebase Auth & Data
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                currentUser = user;
+                initApp();
+            } else {
+                // Redirigir a login si fuera una app real con página de login separada
+                console.log("No user session");
+                // Para este ejemplo, si no hay sesión, podrías mostrar un prompt
+                auth.signInAnonymously(); // Login simplificado para pruebas
+            }
+        });
+
+        async function initApp() {
+            // Escuchar perfil
+            db.collection("users").doc(currentUser.uid).onSnapshot(doc => {
+                if(doc.exists) {
+                    userData = doc.data();
+                    updateHeader();
+                }
+            });
+
+            // Escuchar cambios de custodia (Overrides)
+            db.collection("overrides").onSnapshot(snap => {
+                overrides = {};
+                snap.forEach(doc => overrides[doc.id] = doc.data().owner);
+                renderCalendar();
+            });
+
+            lucide.createIcons();
+        }
+
+        function updateHeader() {
+            document.getElementById('header-child').textContent = userData.childName;
+            document.getElementById('header-role').textContent = "Perfil: " + userData.role.toUpperCase();
+            document.getElementById('user-avatar').textContent = userData.role[0].toUpperCase();
+            document.getElementById('set-child-name').value = userData.childName;
+            document.getElementById('set-user-role').value = userData.role;
+        }
+
+        async function updateProfile() {
+            const childName = document.getElementById('set-child-name').value;
+            const role = document.getElementById('set-user-role').value;
+            await db.collection("users").doc(currentUser.uid).set({ childName, role }, {merge: true});
+        }
+
+        // Inicializar iconos
+        lucide.createIcons();
+        renderCalendar();
+
+    </script>
+</body>
+</html>
