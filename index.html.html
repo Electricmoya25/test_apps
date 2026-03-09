@@ -1,0 +1,2785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Custodia Familiar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+/* ============================================================
+   CSS VARIABLES & RESET
+   ============================================================ */
+:root {
+  --indigo: #667eea;
+  --purple: #764ba2;
+  --indigo-light: #8fa4f3;
+  --purple-dark: #5a3780;
+  --grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --grad-soft: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
+  --surface: #ffffff;
+  --surface-2: #f7f6ff;
+  --surface-3: #eeecff;
+  --text-primary: #1a1535;
+  --text-secondary: #6b6490;
+  --text-muted: #a09cc0;
+  --border: rgba(102,126,234,0.15);
+  --shadow-sm: 0 2px 8px rgba(102,126,234,0.12);
+  --shadow-md: 0 8px 32px rgba(102,126,234,0.18);
+  --shadow-lg: 0 20px 60px rgba(102,126,234,0.25);
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Event colors */
+  --ev-medico: #ef4444;
+  --ev-escuela: #3b82f6;
+  --ev-vacaciones: #f59e0b;
+  --ev-actividad: #10b981;
+  --ev-cumpleanos: #ec4899;
+  --ev-otro: #8b5cf6;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.hidden { display: none !important; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.w-full { width: 100%; }
+.text-center { text-align: center; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+
+/* ============================================================
+   GLOBAL ANIMATIONS
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(102,126,234,0.5); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 12px rgba(102,126,234,0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(102,126,234,0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes bounceIn {
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.05); }
+  70%  { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+.screen {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ============================================================
+   AUTH SCREEN
+   ============================================================ */
+#screen-auth {
+  background: var(--grad);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 100vh;
+}
+
+.auth-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 60px) 32px 40px;
+  text-align: center;
+  position: relative;
+}
+
+.auth-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.15) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(255,255,255,0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.auth-logo {
+  width: 80px;
+  height: 80px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.3);
+  animation: bounceIn 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.auth-logo svg { color: white; }
+
+.auth-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.8rem;
+  color: white;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  animation: fadeUp 0.6s ease 0.1s both;
+}
+
+.auth-subtitle {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.6;
+  max-width: 280px;
+  animation: fadeUp 0.6s ease 0.2s both;
+}
+
+.auth-card {
+  background: var(--surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 32px 24px calc(var(--safe-bottom) + 32px);
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+  animation: fadeUp 0.5s ease 0.15s both;
+}
+
+.auth-tabs {
+  display: flex;
+  background: var(--surface-3);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 28px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 9px;
+  transition: all 0.25s ease;
+  border: none;
+  background: transparent;
+}
+
+.auth-tab.active {
+  background: var(--surface);
+  color: var(--indigo);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-group { margin-bottom: 16px; }
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  background: var(--surface-2);
+  transition: all 0.2s ease;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.form-input:focus {
+  border-color: var(--indigo);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px rgba(102,126,234,0.12);
+}
+
+.btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary {
+  background: var(--grad);
+  color: white;
+  box-shadow: 0 6px 24px rgba(102,126,234,0.4);
+}
+
+.btn-primary:active { transform: scale(0.98); box-shadow: none; }
+
+.btn-secondary {
+  background: var(--surface-3);
+  color: var(--indigo);
+}
+
+.btn-danger {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  border-radius: 10px;
+  width: auto;
+}
+
+.btn-xs {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  border-radius: 8px;
+  width: auto;
+  font-weight: 600;
+}
+
+.error-msg {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================================
+   ONBOARDING SCREEN
+   ============================================================ */
+#screen-onboarding {
+  background: var(--grad);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.onboarding-header {
+  padding: calc(var(--safe-top) + 48px) 32px 32px;
+  text-align: center;
+}
+
+.onboarding-step {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.onboarding-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  color: white;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.onboarding-desc {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+}
+
+.onboarding-body {
+  flex: 1;
+  background: var(--surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 32px 24px calc(var(--safe-bottom) + 32px);
+}
+
+.role-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.role-card {
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: var(--surface);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.role-card.selected {
+  border-color: var(--indigo);
+  background: var(--grad-soft);
+  box-shadow: 0 0 0 4px rgba(102,126,234,0.1);
+}
+
+.role-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  font-size: 1.8rem;
+}
+
+.role-card-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   MAIN APP LAYOUT
+   ============================================================ */
+#screen-app {
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Top Header */
+.app-header {
+  background: var(--grad);
+  padding: calc(var(--safe-top) + 16px) 20px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-greeting {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.65);
+  font-weight: 500;
+}
+
+.header-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+}
+
+.header-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.2);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.notif-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.2);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+.notif-badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  width: 18px; height: 18px;
+  background: #ef4444;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--indigo);
+}
+
+/* Bottom Nav */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: var(--surface);
+  padding: 8px 8px calc(var(--safe-bottom) + 8px);
+  display: flex;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  z-index: 100;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  border: none;
+  background: transparent;
+}
+
+.nav-item.active .nav-icon { color: var(--indigo); }
+.nav-item.active .nav-label { color: var(--indigo); }
+.nav-item.active { background: var(--grad-soft); }
+
+.nav-icon { color: var(--text-muted); transition: color 0.2s; }
+.nav-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+
+/* Main content area */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: calc(var(--safe-bottom) + 80px);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tab panels */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
+
+/* ============================================================
+   HOME TAB
+   ============================================================ */
+.home-custody-card {
+  margin: 20px 16px 0;
+  background: var(--grad);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.home-custody-card::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+}
+
+.home-custody-card::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; right: 20px;
+  width: 100px; height: 100px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
+}
+
+.custody-week-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.custody-who {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.8rem;
+  color: white;
+  margin-bottom: 4px;
+}
+
+.custody-dates {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.custody-avatar {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  backdrop-filter: blur(10px);
+}
+
+.home-section {
+  padding: 20px 16px 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.section-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--indigo);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+/* Quick stats */
+.quick-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.stat-number {
+  font-size: 1.8rem;
+  font-weight: 800;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Event items */
+.event-item {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.event-item:active { transform: scale(0.98); }
+
+.event-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.event-info { flex: 1; min-width: 0; }
+
+.event-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.event-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   CALENDAR TAB
+   ============================================================ */
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px 12px;
+}
+
+.cal-month-label {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem;
+  color: var(--text-primary);
+}
+
+.cal-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s;
+}
+
+.cal-nav-btn:active { background: var(--surface-3); }
+
+.calendar-grid {
+  background: var(--surface);
+  margin: 0 16px;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+}
+
+.cal-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 0;
+}
+
+.cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  gap: 2px;
+}
+
+.cal-day:active { transform: scale(0.92); }
+
+.cal-day-num {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.cal-day.other-month .cal-day-num { color: var(--text-muted); opacity: 0.5; }
+.cal-day.today { background: var(--surface-3); }
+.cal-day.today .cal-day-num { color: var(--indigo); font-weight: 800; }
+.cal-day.selected { background: var(--grad); box-shadow: var(--shadow-sm); }
+.cal-day.selected .cal-day-num { color: white; font-weight: 800; }
+
+/* Custody coloring */
+.cal-day.custody-a { background: rgba(102,126,234,0.12); }
+.cal-day.custody-b { background: rgba(118,75,162,0.12); }
+.cal-day.selected.custody-a,
+.cal-day.selected.custody-b { background: var(--grad); }
+
+.cal-day-dots {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  min-height: 6px;
+}
+
+.cal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.cal-legend {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin: 12px 16px 0;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.legend-dot {
+  width: 12px; height: 12px;
+  border-radius: 4px;
+}
+
+/* Selected day events */
+.day-events-panel {
+  margin: 16px 16px 0;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.day-events-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.day-events-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.day-events-list { padding: 8px; }
+
+.day-custody-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--grad-soft);
+  margin: 8px;
+  border-radius: var(--radius-sm);
+}
+
+.day-custody-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-day {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ============================================================
+   EVENTS/MODAL
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.modal-sheet {
+  width: 100%;
+  background: var(--surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 24px 20px calc(var(--safe-bottom) + 24px);
+  animation: fadeUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-handle {
+  width: 40px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.modal-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.modal-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+/* Category picker */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.category-btn {
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.category-btn.selected {
+  border-color: var(--indigo);
+  background: var(--grad-soft);
+}
+
+.cat-icon { font-size: 1.4rem; margin-bottom: 6px; }
+.cat-label { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
+.category-btn.selected .cat-label { color: var(--indigo); }
+
+/* ============================================================
+   REQUESTS TAB
+   ============================================================ */
+.requests-empty {
+  text-align: center;
+  padding: 60px 32px;
+}
+
+.requests-empty-icon {
+  width: 80px; height: 80px;
+  border-radius: 28px;
+  background: var(--grad-soft);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.requests-empty-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.requests-empty-text {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.request-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  margin: 0 16px 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  animation: slideInRight 0.3s ease;
+}
+
+.request-card-header {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.request-type-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-approved { background: #d1fae5; color: #065f46; }
+.badge-rejected { background: #fee2e2; color: #991b1b; }
+
+.request-card-body { padding: 16px; }
+.request-date {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.request-reason {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.request-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ============================================================
+   GASTOS TAB
+   ============================================================ */
+.gastos-summary {
+  margin: 16px;
+  background: var(--grad);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  color: white;
+}
+
+.gastos-total-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.gastos-total-amount {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  color: white;
+  margin-bottom: 16px;
+}
+
+.gastos-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.gastos-split-item {
+  background: rgba(255,255,255,0.15);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  backdrop-filter: blur(8px);
+}
+
+.split-label {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.65);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.split-amount {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: white;
+}
+
+.gasto-item {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 16px 10px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.gasto-icon {
+  width: 42px; height: 42px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  background: var(--grad-soft);
+  flex-shrink: 0;
+}
+
+.gasto-info { flex: 1; }
+.gasto-desc {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.gasto-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.gasto-amount {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   FAB
+   ============================================================ */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(var(--safe-bottom) + 80px);
+  width: 56px;
+  height: 56px;
+  border-radius: 20px;
+  background: var(--grad);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(102,126,234,0.5);
+  cursor: pointer;
+  z-index: 90;
+  transition: all 0.2s ease;
+  animation: pulse-ring 2.5s infinite;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fab:active { transform: scale(0.92); box-shadow: none; animation: none; }
+
+/* ============================================================
+   LOADING & SPINNERS
+   ============================================================ */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--grad);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  transition: opacity 0.4s ease;
+}
+
+.loading-logo {
+  width: 72px; height: 72px;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+  animation: pulse-ring 2s infinite;
+}
+
+.loading-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.5rem;
+  color: white;
+  margin-bottom: 8px;
+}
+
+.loading-sub {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast {
+  position: fixed;
+  top: calc(var(--safe-top) + 16px);
+  left: 16px; right: 16px;
+  background: var(--text-primary);
+  color: white;
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.3s ease;
+  transition: opacity 0.3s ease;
+}
+
+.toast.success { background: #065f46; }
+.toast.error { background: #991b1b; }
+
+/* ============================================================
+   PROFILE / SETTINGS
+   ============================================================ */
+.profile-header {
+  background: var(--grad);
+  padding: calc(var(--safe-top) + 20px) 20px 32px;
+  text-align: center;
+}
+
+.profile-avatar-lg {
+  width: 80px; height: 80px;
+  border-radius: 28px;
+  background: rgba(255,255,255,0.2);
+  border: 3px solid rgba(255,255,255,0.4);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+  font-size: 2.2rem;
+}
+
+.profile-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.5rem;
+  color: white;
+  margin-bottom: 4px;
+}
+
+.profile-role {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+  font-weight: 500;
+}
+
+.settings-list {
+  margin: 16px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.settings-item:not(:last-child) { border-bottom: 1px solid var(--border); }
+.settings-item:active { background: var(--surface-3); }
+
+.settings-icon {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--grad-soft);
+  flex-shrink: 0;
+}
+
+.settings-label {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-arrow { color: var(--text-muted); }
+
+/* ============================================================
+   WEBHOOK MODAL
+   ============================================================ */
+.webhook-info {
+  background: var(--surface-3);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-bottom: 16px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.webhook-info strong { color: var(--text-primary); }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (min-width: 480px) {
+  .modal-sheet { max-width: 480px; margin: 0 auto; border-radius: var(--radius-xl); }
+  .modal-overlay { align-items: center; }
+  #screen-auth { justify-content: center; }
+  .auth-card { border-radius: var(--radius-xl); margin: 16px; }
+  #screen-auth { background: var(--grad); padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOADING OVERLAY
+     ============================================================ -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-logo">
+    <i data-lucide="heart" style="color:white;width:36px;height:36px;"></i>
+  </div>
+  <div class="loading-title">Custodia Familiar</div>
+  <div class="loading-sub">Cargando tu espacio familiar...</div>
+</div>
+
+<!-- ============================================================
+     AUTH SCREEN
+     ============================================================ -->
+<div class="screen hidden" id="screen-auth">
+  <div class="auth-hero">
+    <div class="auth-logo">
+      <i data-lucide="heart" style="width:40px;height:40px;color:white;"></i>
+    </div>
+    <h1 class="auth-title">Custodia<br>Familiar</h1>
+    <p class="auth-subtitle">Coordina la custodia de tus hijos de forma armoniosa</p>
+  </div>
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Iniciar sesión</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Registrarse</button>
+    </div>
+    <div id="auth-error" class="error-msg hidden">
+      <i data-lucide="alert-circle" style="width:16px;height:16px;flex-shrink:0;"></i>
+      <span id="auth-error-text"></span>
+    </div>
+    <div id="auth-login">
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input class="form-input" type="email" id="login-email" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input class="form-input" type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()" id="btn-login">
+        <span>Entrar</span>
+      </button>
+    </div>
+    <div id="auth-register" class="hidden">
+      <div class="form-group">
+        <label class="form-label">Nombre completo</label>
+        <input class="form-input" type="text" id="reg-name" placeholder="Tu nombre">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input class="form-input" type="email" id="reg-email" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input class="form-input" type="password" id="reg-pass" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()" id="btn-register">
+        <span>Crear cuenta</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     ONBOARDING SCREEN
+     ============================================================ -->
+<div class="screen hidden" id="screen-onboarding">
+  <div class="onboarding-header">
+    <div class="onboarding-step">Paso 1 de 2</div>
+    <h2 class="onboarding-title">¿Cuál es<br>tu rol?</h2>
+    <p class="onboarding-desc">Define tu rol para personalizar la experiencia de custodia.</p>
+  </div>
+  <div class="onboarding-body">
+    <div class="role-cards">
+      <div class="role-card" id="role-madre" onclick="selectRole('madre')">
+        <div class="role-icon">👩</div>
+        <div class="role-card-label">Madre</div>
+      </div>
+      <div class="role-card" id="role-padre" onclick="selectRole('padre')">
+        <div class="role-icon">👨</div>
+        <div class="role-card-label">Padre</div>
+      </div>
+    </div>
+
+    <div id="onboarding-step2" class="hidden">
+      <div style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Paso 2 de 2</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--text-primary);margin-bottom:4px;">Nombre del menor</div>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px;">¿Cómo se llama tu hijo/a?</p>
+      <div class="form-group">
+        <input class="form-input" type="text" id="child-name-input" placeholder="Nombre del menor">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="nextOnboarding()" id="btn-onboarding">
+      Continuar
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN APP SCREEN
+     ============================================================ -->
+<div class="screen hidden" id="screen-app">
+
+  <!-- Header -->
+  <div class="app-header">
+    <div class="app-header-inner">
+      <div>
+        <div class="header-greeting" id="header-greeting">Buenos días</div>
+        <div class="header-name" id="header-name">Cargando...</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="notif-btn" onclick="showTab('requests')">
+          <i data-lucide="bell" style="width:18px;height:18px;color:white;"></i>
+          <span class="notif-badge hidden" id="notif-badge">0</span>
+        </button>
+        <div class="header-avatar" onclick="showTab('profile')">
+          <span id="header-avatar-emoji" style="font-size:1.2rem;">👤</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="app-content">
+
+    <!-- HOME TAB -->
+    <div class="tab-panel active" id="tab-home">
+      <div class="home-custody-card">
+        <div class="custody-week-label">Semana actual</div>
+        <div class="custody-who" id="custody-who">Cargando...</div>
+        <div class="custody-dates" id="custody-dates">—</div>
+        <div class="custody-avatar" id="custody-avatar">👶</div>
+      </div>
+
+      <div class="home-section">
+        <div class="section-header">
+          <div class="section-title">Resumen</div>
+        </div>
+        <div class="quick-stats">
+          <div class="stat-card">
+            <div class="stat-number" id="stat-events">0</div>
+            <div class="stat-label">Eventos este mes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="stat-requests">0</div>
+            <div class="stat-label">Solicitudes pendientes</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-section">
+        <div class="section-header">
+          <div class="section-title">Próximos eventos</div>
+          <button class="section-link" onclick="showTab('calendar')">Ver todos</button>
+        </div>
+        <div id="upcoming-events-list">
+          <div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:0.85rem;">
+            Cargando eventos...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR TAB -->
+    <div class="tab-panel" id="tab-calendar">
+      <div class="calendar-header">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)">
+          <i data-lucide="chevron-left" style="width:18px;height:18px;"></i>
+        </button>
+        <div class="cal-month-label" id="cal-month-label">—</div>
+        <button class="cal-nav-btn" onclick="changeMonth(1)">
+          <i data-lucide="chevron-right" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="calendar-grid">
+        <div class="cal-weekdays">
+          <div class="cal-weekday">L</div><div class="cal-weekday">M</div>
+          <div class="cal-weekday">X</div><div class="cal-weekday">J</div>
+          <div class="cal-weekday">V</div><div class="cal-weekday">S</div>
+          <div class="cal-weekday">D</div>
+        </div>
+        <div class="cal-days" id="cal-days"></div>
+      </div>
+      <div class="cal-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:rgba(102,126,234,0.4);"></div>
+          <span id="legend-a">Semana A</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:rgba(118,75,162,0.4);"></div>
+          <span id="legend-b">Semana B</span>
+        </div>
+      </div>
+      <div class="day-events-panel" id="day-events-panel">
+        <div class="day-events-header">
+          <div class="day-events-title" id="day-events-title">Selecciona un día</div>
+          <button class="btn btn-primary btn-sm" onclick="openAddEvent()" id="btn-add-event">
+            + Evento
+          </button>
+        </div>
+        <div class="day-events-list" id="day-events-list">
+          <div class="empty-day">Toca un día para ver sus eventos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REQUESTS TAB -->
+    <div class="tab-panel" id="tab-requests">
+      <div style="padding:20px 16px 12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--text-primary);margin-bottom:4px;">Solicitudes</div>
+        <div style="font-size:0.85rem;color:var(--text-muted);">Cambios de día de custodia</div>
+      </div>
+
+      <button class="btn btn-primary" style="margin:0 16px 20px;width:calc(100% - 32px);" onclick="openNewRequest()">
+        <i data-lucide="plus" style="width:18px;height:18px;"></i>
+        Nueva solicitud de cambio
+      </button>
+
+      <div id="requests-list">
+        <div class="requests-empty">
+          <div class="requests-empty-icon">
+            <i data-lucide="inbox" style="width:36px;height:36px;color:var(--indigo);"></i>
+          </div>
+          <div class="requests-empty-title">Sin solicitudes</div>
+          <div class="requests-empty-text">Las solicitudes de cambio de custodia aparecerán aquí.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GASTOS TAB -->
+    <div class="tab-panel" id="tab-gastos">
+      <div class="gastos-summary">
+        <div class="gastos-total-label">Total este mes</div>
+        <div class="gastos-total-amount" id="gastos-total">€0.00</div>
+        <div class="gastos-split">
+          <div class="gastos-split-item">
+            <div class="split-label" id="split-label-a">—</div>
+            <div class="split-amount" id="split-amount-a">€0.00</div>
+          </div>
+          <div class="gastos-split-item">
+            <div class="split-label" id="split-label-b">—</div>
+            <div class="split-amount" id="split-amount-b">€0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:16px;">
+        <div class="section-header">
+          <div class="section-title">Gastos recientes</div>
+          <button class="btn btn-primary btn-sm" onclick="openAddGasto()">+ Añadir</button>
+        </div>
+      </div>
+      <div id="gastos-list">
+        <div style="text-align:center;padding:40px 16px;color:var(--text-muted);font-size:0.85rem;">
+          Aún no hay gastos registrados.
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div class="tab-panel" id="tab-profile">
+      <div class="profile-header">
+        <div class="profile-avatar-lg" id="profile-avatar-lg">👤</div>
+        <div class="profile-name" id="profile-name-display">—</div>
+        <div class="profile-role" id="profile-role-display">—</div>
+      </div>
+
+      <div style="padding:16px 16px 0;">
+        <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Configuración</div>
+      </div>
+
+      <div class="settings-list">
+        <button class="settings-item" onclick="openWebhookModal()">
+          <div class="settings-icon">
+            <i data-lucide="send" style="width:18px;height:18px;color:var(--indigo);"></i>
+          </div>
+          <span class="settings-label">Notificaciones Telegram</span>
+          <i data-lucide="chevron-right" class="settings-arrow" style="width:16px;height:16px;"></i>
+        </button>
+        <button class="settings-item" onclick="openChildNameModal()">
+          <div class="settings-icon">
+            <i data-lucide="user" style="width:18px;height:18px;color:var(--purple);"></i>
+          </div>
+          <span class="settings-label">Nombre del menor</span>
+          <i data-lucide="chevron-right" class="settings-arrow" style="width:16px;height:16px;"></i>
+        </button>
+        <button class="settings-item" onclick="doLogout()" style="color:#ef4444;">
+          <div class="settings-icon" style="background:#fee2e2;">
+            <i data-lucide="log-out" style="width:18px;height:18px;color:#ef4444;"></i>
+          </div>
+          <span class="settings-label" style="color:#ef4444;">Cerrar sesión</span>
+          <i data-lucide="chevron-right" class="settings-arrow" style="width:16px;height:16px;color:#ef4444;"></i>
+        </button>
+      </div>
+
+      <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.75rem;">
+        Custodia Familiar v1.0.0<br>Hecho con ❤️ para familias
+      </div>
+    </div>
+
+  </div><!-- end app-content -->
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="showTab('home')" id="nav-home">
+      <i data-lucide="home" class="nav-icon" style="width:22px;height:22px;"></i>
+      <span class="nav-label">Inicio</span>
+    </button>
+    <button class="nav-item" onclick="showTab('calendar')" id="nav-calendar">
+      <i data-lucide="calendar" class="nav-icon" style="width:22px;height:22px;"></i>
+      <span class="nav-label">Calendario</span>
+    </button>
+    <button class="nav-item" onclick="showTab('requests')" id="nav-requests">
+      <i data-lucide="arrow-left-right" class="nav-icon" style="width:22px;height:22px;"></i>
+      <span class="nav-label">Cambios</span>
+    </button>
+    <button class="nav-item" onclick="showTab('gastos')" id="nav-gastos">
+      <i data-lucide="wallet" class="nav-icon" style="width:22px;height:22px;"></i>
+      <span class="nav-label">Gastos</span>
+    </button>
+    <button class="nav-item" onclick="showTab('profile')" id="nav-profile">
+      <i data-lucide="user" class="nav-icon" style="width:22px;height:22px;"></i>
+      <span class="nav-label">Perfil</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+
+<!-- Add Event Modal -->
+<div class="modal-overlay hidden" id="modal-add-event">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo evento</div>
+    <div class="modal-subtitle" id="modal-event-date-label">—</div>
+
+    <div class="form-group">
+      <label class="form-label">Título del evento</label>
+      <input class="form-input" type="text" id="event-title-input" placeholder="Ej: Revisión médica">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <div class="category-grid" id="category-grid">
+        <div class="category-btn selected" onclick="selectCategory('medico', this)">
+          <div class="cat-icon">🏥</div><div class="cat-label">Médico</div>
+        </div>
+        <div class="category-btn" onclick="selectCategory('escuela', this)">
+          <div class="cat-icon">🎒</div><div class="cat-label">Escuela</div>
+        </div>
+        <div class="category-btn" onclick="selectCategory('vacaciones', this)">
+          <div class="cat-icon">🌴</div><div class="cat-label">Vacaciones</div>
+        </div>
+        <div class="category-btn" onclick="selectCategory('actividad', this)">
+          <div class="cat-icon">⚽</div><div class="cat-label">Actividad</div>
+        </div>
+        <div class="category-btn" onclick="selectCategory('cumpleanos', this)">
+          <div class="cat-icon">🎂</div><div class="cat-label">Cumpleaños</div>
+        </div>
+        <div class="category-btn" onclick="selectCategory('otro', this)">
+          <div class="cat-icon">📌</div><div class="cat-label">Otro</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Hora (opcional)</label>
+      <input class="form-input" type="time" id="event-time-input">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas (opcional)</label>
+      <input class="form-input" type="text" id="event-notes-input" placeholder="Información adicional...">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-event')" style="flex:1;">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEvent()" style="flex:2;">Guardar evento</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Request Modal -->
+<div class="modal-overlay hidden" id="modal-new-request">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Solicitar cambio</div>
+    <div class="modal-subtitle">Pide un cambio de día de custodia</div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha que quieres cambiar</label>
+      <input class="form-input" type="date" id="req-date-input">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha alternativa propuesta</label>
+      <input class="form-input" type="date" id="req-alt-date-input">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Motivo de la solicitud</label>
+      <input class="form-input" type="text" id="req-reason-input" placeholder="Explica brevemente el motivo...">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-request')" style="flex:1;">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRequest()" style="flex:2;">Enviar solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Gasto Modal -->
+<div class="modal-overlay hidden" id="modal-add-gasto">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo gasto</div>
+    <div class="modal-subtitle">Registra un gasto compartido</div>
+
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" type="text" id="gasto-desc-input" placeholder="Ej: Material escolar">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Importe (€)</label>
+      <input class="form-input" type="number" id="gasto-amount-input" placeholder="0.00" step="0.01" min="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <select class="form-input" id="gasto-cat-input">
+        <option value="educacion">📚 Educación</option>
+        <option value="salud">🏥 Salud</option>
+        <option value="ropa">👕 Ropa</option>
+        <option value="ocio">🎮 Ocio</option>
+        <option value="alimentacion">🍎 Alimentación</option>
+        <option value="otro">📌 Otro</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-gasto')" style="flex:1;">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveGasto()" style="flex:2;">Registrar gasto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Webhook Modal -->
+<div class="modal-overlay hidden" id="modal-webhook">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Telegram</div>
+    <div class="modal-subtitle">Recibe notificaciones en tiempo real</div>
+
+    <div class="webhook-info">
+      <strong>¿Cómo configurarlo?</strong><br>
+      1. Abre Telegram y busca <strong>@BotFather</strong><br>
+      2. Crea un bot con <strong>/newbot</strong><br>
+      3. Copia el token y pégalo aquí<br>
+      4. Envía <strong>/start</strong> a tu bot para obtener el Chat ID
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Token del Bot</label>
+      <input class="form-input" type="text" id="tg-token-input" placeholder="123456:ABC-DEF...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tu Chat ID</label>
+      <input class="form-input" type="text" id="tg-chatid-input" placeholder="Ej: 123456789">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-webhook')" style="flex:1;">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveWebhook()" style="flex:2;">Guardar y probar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Child Name Modal -->
+<div class="modal-overlay hidden" id="modal-child-name">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nombre del menor</div>
+    <div class="modal-subtitle">Actualiza el nombre de tu hijo/a</div>
+    <div class="form-group">
+      <label class="form-label">Nombre</label>
+      <input class="form-input" type="text" id="child-name-update-input" placeholder="Nombre del menor">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-child-name')" style="flex:1;">Cancelar</button>
+      <button class="btn btn-primary" onclick="updateChildName()" style="flex:2;">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+// ============================================================
+// FIREBASE CONFIG — ⚠️ REEMPLAZA CON TUS CREDENCIALES
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAwgk4_l0zvaCUCgm1CjqqqXjJHr5KPBjc",
+  authDomain: "custodia-familiar.firebaseapp.com",
+  projectId: "custodia-familiar",
+  storageBucket: "custodia-familiar.firebasestorage.app",
+  messagingSenderId: "1038952432258",
+  appId: "1:1038952432258:web:7608d6a48d8ad8308a6a9b"
+};
+
+// ============================================================
+// INIT
+// ============================================================
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ============================================================
+// APP STATE
+// ============================================================
+let currentUser     = null;
+let userProfile     = null;
+let selectedDate    = new Date();
+let calendarDate    = new Date();
+let selectedCategory = 'medico';
+let allEvents       = [];
+let allRequests     = [];
+let allGastos       = [];
+let unsubs          = [];
+let onboardingRole  = null;
+let onboardingStep  = 1;
+
+// ============================================================
+// CUSTODY LOGIC — Fecha base: lunes 2026-01-05
+// ============================================================
+const BASE_CUSTODY_DATE = new Date('2026-01-05T00:00:00');
+
+function getCustodyOwner(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  const base = new Date(BASE_CUSTODY_DATE);
+  base.setHours(0,0,0,0);
+  const diffDays = Math.floor((d - base) / 86400000);
+  const weekNum  = Math.floor(diffDays / 7);
+  // Week 0 → A, Week 1 → B, Week 2 → A...
+  return weekNum % 2 === 0 ? 'A' : 'B';
+}
+
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function getWeekEnd(date) {
+  const start = getWeekStart(date);
+  const end   = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return end;
+}
+
+function formatDateShort(date) {
+  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+}
+
+function formatDateFull(date) {
+  return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+function toISODate(date) {
+  return date.toISOString().split('T')[0];
+}
+
+// ============================================================
+// LUCIDE INIT (re-render after dynamic content)
+// ============================================================
+function renderIcons() {
+  if (window.lucide) lucide.createIcons();
+}
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  renderIcons();
+}
+
+function hideLoading() {
+  const el = document.getElementById('loading');
+  el.style.opacity = '0';
+  setTimeout(() => el.style.display = 'none', 400);
+}
+
+// ============================================================
+// TAB NAVIGATION
+// ============================================================
+function showTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+
+  if (tab === 'calendar') renderCalendar();
+  if (tab === 'gastos')   renderGastos();
+  renderIcons();
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('auth-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('auth-register').classList.toggle('hidden', tab !== 'register');
+  clearAuthError();
+}
+
+function showAuthError(msg) {
+  const el  = document.getElementById('auth-error');
+  el.classList.remove('hidden');
+  document.getElementById('auth-error-text').textContent = msg;
+}
+
+function clearAuthError() {
+  document.getElementById('auth-error').classList.add('hidden');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if (!email || !pass) return showAuthError('Por favor, completa todos los campos.');
+  const btn = document.getElementById('btn-login');
+  btn.innerHTML = '<div class="spinner"></div>';
+  btn.disabled  = true;
+  clearAuthError();
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    showAuthError(translateAuthError(e.code));
+    btn.innerHTML = '<span>Entrar</span>';
+    btn.disabled  = false;
+  }
+}
+
+async function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  if (!name || !email || !pass) return showAuthError('Por favor, completa todos los campos.');
+  if (pass.length < 6) return showAuthError('La contraseña debe tener al menos 6 caracteres.');
+  const btn = document.getElementById('btn-register');
+  btn.innerHTML = '<div class="spinner"></div>';
+  btn.disabled  = true;
+  clearAuthError();
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await db.collection('users').doc(cred.user.uid).set({
+      name, email, role: null, childName: null, tgToken: null, tgChatId: null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) {
+    showAuthError(translateAuthError(e.code));
+    btn.innerHTML = '<span>Crear cuenta</span>';
+    btn.disabled  = false;
+  }
+}
+
+function doLogout() {
+  unsubs.forEach(u => u());
+  unsubs = [];
+  auth.signOut();
+}
+
+function translateAuthError(code) {
+  const msgs = {
+    'auth/user-not-found': 'No existe ninguna cuenta con ese correo.',
+    'auth/wrong-password': 'Contraseña incorrecta.',
+    'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
+    'auth/invalid-email': 'El correo electrónico no es válido.',
+    'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos.',
+    'auth/network-request-failed': 'Error de conexión. Revisa tu internet.',
+    'auth/invalid-credential': 'Credenciales incorrectas. Verifica tu correo y contraseña.',
+  };
+  return msgs[code] || 'Error al autenticar. Inténtalo de nuevo.';
+}
+
+// ============================================================
+// ONBOARDING
+// ============================================================
+function selectRole(role) {
+  onboardingRole = role;
+  document.getElementById('role-madre').classList.toggle('selected', role === 'madre');
+  document.getElementById('role-padre').classList.toggle('selected', role === 'padre');
+  document.getElementById('onboarding-step2').classList.remove('hidden');
+}
+
+async function nextOnboarding() {
+  if (!onboardingRole) return showToast('Selecciona tu rol para continuar.', 'error');
+  const childName = document.getElementById('child-name-input').value.trim();
+  if (!childName) return showToast('Introduce el nombre del menor.', 'error');
+
+  const btn = document.getElementById('btn-onboarding');
+  btn.innerHTML = '<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:white;"></div>';
+  btn.disabled  = true;
+
+  try {
+    await db.collection('users').doc(currentUser.uid).update({
+      role: onboardingRole, childName
+    });
+  } catch(e) {
+    showToast('Error al guardar. Inténtalo de nuevo.', 'error');
+    btn.innerHTML = 'Continuar';
+    btn.disabled  = false;
+  }
+}
+
+// ============================================================
+// AUTH STATE OBSERVER
+// ============================================================
+auth.onAuthStateChanged(async user => {
+  if (!user) {
+    currentUser = null;
+    userProfile = null;
+    hideLoading();
+    showScreen('screen-auth');
+    return;
+  }
+
+  currentUser = user;
+
+  // Load user profile
+  const snap = await db.collection('users').doc(user.uid).get();
+  if (!snap.exists) {
+    hideLoading();
+    showScreen('screen-auth');
+    return;
+  }
+
+  userProfile = snap.data();
+
+  if (!userProfile.role || !userProfile.childName) {
+    hideLoading();
+    showScreen('screen-onboarding');
+    // Watch for onboarding completion
+    const unsub = db.collection('users').doc(user.uid).onSnapshot(d => {
+      const data = d.data();
+      if (data.role && data.childName) {
+        unsub();
+        userProfile = data;
+        initApp();
+      }
+    });
+    return;
+  }
+
+  hideLoading();
+  initApp();
+});
+
+// ============================================================
+// APP INIT
+// ============================================================
+function initApp() {
+  showScreen('screen-app');
+  updateHeader();
+  updateCustodyCard();
+  subscribeToData();
+  renderCalendar();
+  renderIcons();
+}
+
+function updateHeader() {
+  const hour = new Date().getHours();
+  let greeting = hour < 12 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('header-greeting').textContent = greeting;
+  document.getElementById('header-name').textContent = userProfile.name || 'Usuario';
+
+  const emoji = userProfile.role === 'madre' ? '👩' : '👨';
+  document.getElementById('header-avatar-emoji').textContent = emoji;
+  document.getElementById('profile-avatar-lg').textContent   = emoji;
+  document.getElementById('profile-name-display').textContent = userProfile.name;
+  document.getElementById('profile-role-display').textContent =
+    (userProfile.role === 'madre' ? 'Madre' : 'Padre') + ' · ' + (userProfile.childName || '—');
+}
+
+function updateCustodyCard() {
+  const today = new Date();
+  const owner = getCustodyOwner(today);
+  const start = getWeekStart(today);
+  const end   = getWeekEnd(today);
+  const child = userProfile.childName || 'Tu hijo/a';
+
+  // A = first parent by alphabet / config. Let's say A = Madre, B = Padre
+  const isMine = (owner === 'A' && userProfile.role === 'madre') ||
+                 (owner === 'B' && userProfile.role === 'padre');
+
+  document.getElementById('custody-who').textContent =
+    isMine ? `Semana contigo 🎉` : `Semana con el otro progenitor`;
+  document.getElementById('custody-dates').textContent =
+    `${formatDateShort(start)} – ${formatDateShort(end)}`;
+  document.getElementById('custody-avatar').textContent = child[0]?.toUpperCase() || '👶';
+
+  // Legend labels
+  document.getElementById('legend-a').textContent = 'Semana Madre';
+  document.getElementById('legend-b').textContent = 'Semana Padre';
+}
+
+// ============================================================
+// REAL-TIME SUBSCRIPTIONS
+// ============================================================
+function subscribeToData() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // Events
+  const u1 = db.collection('events')
+    .where('uid', '==', currentUser.uid)
+    .orderBy('date', 'asc')
+    .onSnapshot(snap => {
+      allEvents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderUpcoming();
+      renderCalendar();
+      renderDayEvents();
+      document.getElementById('stat-events').textContent = allEvents.filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }).length;
+    }, err => console.warn('Events error:', err));
+
+  // Requests (both sent by me and received)
+  const u2 = db.collection('requests')
+    .where('participants', 'array-contains', currentUser.uid)
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      allRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderRequests();
+      const pending = allRequests.filter(r => r.status === 'pending' && r.toUid === currentUser.uid).length;
+      const badge   = document.getElementById('notif-badge');
+      badge.textContent = pending;
+      badge.classList.toggle('hidden', pending === 0);
+      document.getElementById('stat-requests').textContent = allRequests.filter(r => r.status === 'pending').length;
+    }, err => console.warn('Requests error:', err));
+
+  // Gastos
+  const u3 = db.collection('gastos')
+    .where('participants', 'array-contains', currentUser.uid)
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      allGastos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderGastos();
+    }, err => console.warn('Gastos error:', err));
+
+  unsubs.push(u1, u2, u3);
+}
+
+// ============================================================
+// CALENDAR RENDER
+// ============================================================
+function renderCalendar() {
+  const year  = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-month-label').textContent = `${months[month]} ${year}`;
+
+  const first = new Date(year, month, 1);
+  let   startDay = first.getDay(); // 0=Sun
+  startDay = startDay === 0 ? 6 : startDay - 1; // Mon-based
+
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const today   = new Date();
+
+  const container = document.getElementById('cal-days');
+  container.innerHTML = '';
+
+  // Event index by date
+  const eventsByDate = {};
+  allEvents.forEach(ev => {
+    if (!eventsByDate[ev.date]) eventsByDate[ev.date] = [];
+    eventsByDate[ev.date].push(ev);
+  });
+
+  // Leading blanks (prev month)
+  const prevLastDay = new Date(year, month, 0).getDate();
+  for (let i = 0; i < startDay; i++) {
+    const dayNum = prevLastDay - startDay + i + 1;
+    const dayEl = createDayEl(dayNum, true, null, []);
+    container.appendChild(dayEl);
+  }
+
+  // Current month
+  for (let d = 1; d <= lastDay; d++) {
+    const date   = new Date(year, month, d);
+    const iso    = toISODate(date);
+    const owner  = getCustodyOwner(date);
+    const events = eventsByDate[iso] || [];
+    const isToday    = date.toDateString() === today.toDateString();
+    const isSelected = date.toDateString() === selectedDate.toDateString();
+    const dayEl = createDayEl(d, false, { date, iso, owner, isToday, isSelected }, events);
+    container.appendChild(dayEl);
+  }
+
+  // Trailing blanks
+  const total    = startDay + lastDay;
+  const trailing = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= trailing; i++) {
+    const dayEl = createDayEl(i, true, null, []);
+    container.appendChild(dayEl);
+  }
+}
+
+function createDayEl(num, otherMonth, meta, events) {
+  const el = document.createElement('div');
+  el.className = 'cal-day';
+  if (otherMonth) { el.classList.add('other-month'); }
+  else {
+    if (meta.isToday)    el.classList.add('today');
+    if (meta.isSelected) el.classList.add('selected');
+    el.classList.add(meta.owner === 'A' ? 'custody-a' : 'custody-b');
+    el.onclick = () => selectDay(meta.date);
+  }
+
+  const numEl = document.createElement('div');
+  numEl.className = 'cal-day-num';
+  numEl.textContent = num;
+  el.appendChild(numEl);
+
+  if (!otherMonth && events.length) {
+    const dotsEl = document.createElement('div');
+    dotsEl.className = 'cal-day-dots';
+    events.slice(0, 3).forEach(ev => {
+      const dot = document.createElement('div');
+      dot.className = 'cal-dot';
+      dot.style.background = getCategoryColor(ev.category);
+      dotsEl.appendChild(dot);
+    });
+    el.appendChild(dotsEl);
+  }
+
+  return el;
+}
+
+function selectDay(date) {
+  selectedDate = date;
+  renderCalendar();
+  renderDayEvents();
+}
+
+function changeMonth(delta) {
+  calendarDate.setMonth(calendarDate.getMonth() + delta);
+  renderCalendar();
+}
+
+function renderDayEvents() {
+  const iso    = toISODate(selectedDate);
+  const events = allEvents.filter(e => e.date === iso);
+  const owner  = getCustodyOwner(selectedDate);
+
+  document.getElementById('day-events-title').textContent = formatDateFull(selectedDate);
+
+  const list = document.getElementById('day-events-list');
+  list.innerHTML = '';
+
+  // Custody info
+  const custodyDiv = document.createElement('div');
+  custodyDiv.className = 'day-custody-info';
+  const isMine = (owner === 'A' && userProfile.role === 'madre') ||
+                 (owner === 'B' && userProfile.role === 'padre');
+  custodyDiv.innerHTML = `
+    <span style="font-size:1.2rem;">${isMine ? '🏠' : '🔄'}</span>
+    <span class="day-custody-text">${isMine ? 'Tu semana de custodia' : 'Semana del otro progenitor'}</span>
+  `;
+  list.appendChild(custodyDiv);
+
+  if (events.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-day';
+    empty.textContent = 'No hay eventos este día';
+    list.appendChild(empty);
+  } else {
+    events.forEach(ev => {
+      const item = createEventItem(ev, true);
+      list.appendChild(item);
+    });
+  }
+  renderIcons();
+}
+
+// ============================================================
+// EVENTS
+// ============================================================
+const CATEGORIES = {
+  medico:     { icon: '🏥', label: 'Médico',     color: '#ef4444' },
+  escuela:    { icon: '🎒', label: 'Escuela',     color: '#3b82f6' },
+  vacaciones: { icon: '🌴', label: 'Vacaciones',  color: '#f59e0b' },
+  actividad:  { icon: '⚽', label: 'Actividad',   color: '#10b981' },
+  cumpleanos: { icon: '🎂', label: 'Cumpleaños',  color: '#ec4899' },
+  otro:       { icon: '📌', label: 'Otro',        color: '#8b5cf6' },
+};
+
+const GASTO_CATS = {
+  educacion:    { icon: '📚', label: 'Educación' },
+  salud:        { icon: '🏥', label: 'Salud' },
+  ropa:         { icon: '👕', label: 'Ropa' },
+  ocio:         { icon: '🎮', label: 'Ocio' },
+  alimentacion: { icon: '🍎', label: 'Alimentación' },
+  otro:         { icon: '📌', label: 'Otro' },
+};
+
+function getCategoryColor(cat) {
+  return (CATEGORIES[cat] || CATEGORIES.otro).color;
+}
+
+function getCategoryIcon(cat) {
+  return (CATEGORIES[cat] || CATEGORIES.otro).icon;
+}
+
+function createEventItem(ev, withDelete = false) {
+  const cat = CATEGORIES[ev.category] || CATEGORIES.otro;
+  const el  = document.createElement('div');
+  el.className = 'event-item';
+  el.innerHTML = `
+    <div class="event-dot" style="background:${cat.color}22;">
+      <span style="font-size:1.2rem;">${cat.icon}</span>
+    </div>
+    <div class="event-info">
+      <div class="event-title">${ev.title}</div>
+      <div class="event-meta">${ev.time ? ev.time + ' · ' : ''}${cat.label}${ev.notes ? ' · ' + ev.notes : ''}</div>
+    </div>
+    ${withDelete ? `<button onclick="deleteEvent('${ev.id}')" style="background:none;border:none;cursor:pointer;padding:6px;color:var(--text-muted);">
+      <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+    </button>` : ''}
+  `;
+  return el;
+}
+
+function renderUpcoming() {
+  const today    = new Date();
+  const isoToday = toISODate(today);
+  const upcoming = allEvents
+    .filter(e => e.date >= isoToday)
+    .slice(0, 5);
+
+  const list = document.getElementById('upcoming-events-list');
+  if (upcoming.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:0.85rem;">No hay eventos próximos. ¡Añade uno desde el calendario!</div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  upcoming.forEach(ev => list.appendChild(createEventItem(ev, false)));
+  renderIcons();
+}
+
+function openAddEvent() {
+  document.getElementById('modal-event-date-label').textContent = formatDateFull(selectedDate);
+  document.getElementById('event-title-input').value = '';
+  document.getElementById('event-time-input').value  = '';
+  document.getElementById('event-notes-input').value = '';
+  selectedCategory = 'medico';
+  document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector('.category-btn').classList.add('selected');
+  document.getElementById('modal-add-event').classList.remove('hidden');
+}
+
+function selectCategory(cat, el) {
+  selectedCategory = cat;
+  document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function saveEvent() {
+  const title = document.getElementById('event-title-input').value.trim();
+  if (!title) return showToast('Introduce un título para el evento.', 'error');
+
+  try {
+    await db.collection('events').add({
+      uid:      currentUser.uid,
+      date:     toISODate(selectedDate),
+      title,
+      category: selectedCategory,
+      time:     document.getElementById('event-time-input').value || null,
+      notes:    document.getElementById('event-notes-input').value.trim() || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeModal('modal-add-event');
+    showToast('Evento guardado correctamente.', 'success');
+  } catch(e) {
+    showToast('Error al guardar el evento.', 'error');
+  }
+}
+
+async function deleteEvent(id) {
+  if (!confirm('¿Eliminar este evento?')) return;
+  try {
+    await db.collection('events').doc(id).delete();
+    showToast('Evento eliminado.', 'success');
+  } catch(e) {
+    showToast('Error al eliminar el evento.', 'error');
+  }
+}
+
+// ============================================================
+// REQUESTS
+// ============================================================
+function openNewRequest() {
+  const today = toISODate(new Date());
+  document.getElementById('req-date-input').value      = today;
+  document.getElementById('req-alt-date-input').value  = today;
+  document.getElementById('req-reason-input').value    = '';
+  document.getElementById('modal-new-request').classList.remove('hidden');
+}
+
+async function saveRequest() {
+  const date    = document.getElementById('req-date-input').value;
+  const altDate = document.getElementById('req-alt-date-input').value;
+  const reason  = document.getElementById('req-reason-input').value.trim();
+  if (!date || !reason) return showToast('Completa todos los campos.', 'error');
+
+  // Find the other user (partner) — simplistic: first other user in users collection
+  // In a real app, you'd store partner UID in user profile
+  try {
+    await db.collection('requests').add({
+      fromUid:      currentUser.uid,
+      fromName:     userProfile.name,
+      toUid:        null, // Set partner UID here
+      participants: [currentUser.uid],
+      date,
+      altDate,
+      reason,
+      status:   'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeModal('modal-new-request');
+    showToast('Solicitud enviada correctamente.', 'success');
+    await sendTelegramNotification(`📅 Nueva solicitud de cambio\nDe: ${userProfile.name}\nFecha: ${date}\nMotivo: ${reason}`);
+  } catch(e) {
+    showToast('Error al enviar la solicitud.', 'error');
+  }
+}
+
+function renderRequests() {
+  const list = document.getElementById('requests-list');
+  if (allRequests.length === 0) {
+    list.innerHTML = `
+      <div class="requests-empty">
+        <div class="requests-empty-icon">
+          <i data-lucide="inbox" style="width:36px;height:36px;color:var(--indigo);"></i>
+        </div>
+        <div class="requests-empty-title">Sin solicitudes</div>
+        <div class="requests-empty-text">Las solicitudes de cambio de custodia aparecerán aquí.</div>
+      </div>`;
+    renderIcons();
+    return;
+  }
+
+  list.innerHTML = '';
+  allRequests.forEach(req => {
+    const isMine  = req.fromUid === currentUser.uid;
+    const canAct  = !isMine && req.status === 'pending';
+    const badgeCls = req.status === 'pending' ? 'badge-pending' :
+                     req.status === 'approved' ? 'badge-approved' : 'badge-rejected';
+    const badgeLabel = req.status === 'pending' ? 'Pendiente' :
+                       req.status === 'approved' ? 'Aprobada' : 'Rechazada';
+
+    const card = document.createElement('div');
+    card.className = 'request-card';
+    card.innerHTML = `
+      <div class="request-card-header">
+        <span style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);">
+          ${isMine ? 'Enviada por ti' : 'Recibida de ' + (req.fromName || 'otro progenitor')}
+        </span>
+        <span class="request-type-badge ${badgeCls}">${badgeLabel}</span>
+      </div>
+      <div class="request-card-body">
+        <div class="request-date">📅 ${req.date} → ${req.altDate || '—'}</div>
+        <div class="request-reason">${req.reason}</div>
+        ${canAct ? `
+          <div class="request-actions">
+            <button class="btn btn-danger btn-sm" onclick="respondRequest('${req.id}','rejected')">Rechazar</button>
+            <button class="btn btn-primary btn-sm" onclick="respondRequest('${req.id}','approved')">Aprobar</button>
+          </div>` : ''}
+      </div>
+    `;
+    list.appendChild(card);
+  });
+  renderIcons();
+}
+
+async function respondRequest(id, status) {
+  const req = allRequests.find(r => r.id === id);
+  if (!req) return;
+
+  // Security: only the recipient can respond
+  if (req.fromUid === currentUser.uid) {
+    return showToast('No puedes responder a tu propia solicitud.', 'error');
+  }
+
+  try {
+    await db.collection('requests').doc(id).update({ status });
+
+    // If approved, add override to Firestore
+    if (status === 'approved' && req.date) {
+      await db.collection('overrides').add({
+        date:    req.date,
+        altDate: req.altDate,
+        requestId: id,
+        approvedBy: currentUser.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    const msg = status === 'approved'
+      ? `✅ Solicitud aprobada\nFecha: ${req.date}`
+      : `❌ Solicitud rechazada\nFecha: ${req.date}`;
+    await sendTelegramNotification(msg);
+    showToast(status === 'approved' ? 'Solicitud aprobada.' : 'Solicitud rechazada.', 'success');
+  } catch(e) {
+    showToast('Error al responder la solicitud.', 'error');
+  }
+}
+
+// ============================================================
+// GASTOS
+// ============================================================
+function openAddGasto() {
+  document.getElementById('gasto-desc-input').value   = '';
+  document.getElementById('gasto-amount-input').value = '';
+  document.getElementById('modal-add-gasto').classList.remove('hidden');
+}
+
+async function saveGasto() {
+  const desc   = document.getElementById('gasto-desc-input').value.trim();
+  const amount = parseFloat(document.getElementById('gasto-amount-input').value);
+  const cat    = document.getElementById('gasto-cat-input').value;
+  if (!desc || isNaN(amount) || amount <= 0) return showToast('Introduce descripción e importe válidos.', 'error');
+
+  try {
+    await db.collection('gastos').add({
+      uid:          currentUser.uid,
+      userName:     userProfile.name,
+      participants: [currentUser.uid],
+      desc, amount, cat,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeModal('modal-add-gasto');
+    showToast('Gasto registrado correctamente.', 'success');
+  } catch(e) {
+    showToast('Error al registrar el gasto.', 'error');
+  }
+}
+
+function renderGastos() {
+  const now   = new Date();
+  const month = now.getMonth();
+  const year  = now.getFullYear();
+
+  const monthGastos = allGastos.filter(g => {
+    if (!g.createdAt) return false;
+    const d = g.createdAt.toDate ? g.createdAt.toDate() : new Date(g.createdAt);
+    return d.getMonth() === month && d.getFullYear() === year;
+  });
+
+  const total = monthGastos.reduce((s, g) => s + (g.amount || 0), 0);
+  const myGastos    = monthGastos.filter(g => g.uid === currentUser.uid);
+  const otherGastos = monthGastos.filter(g => g.uid !== currentUser.uid);
+  const myTotal    = myGastos.reduce((s,g) => s + (g.amount||0), 0);
+  const otherTotal = otherGastos.reduce((s,g) => s + (g.amount||0), 0);
+
+  document.getElementById('gastos-total').textContent   = `€${total.toFixed(2)}`;
+  document.getElementById('split-label-a').textContent  = userProfile.name?.split(' ')[0] || 'Yo';
+  document.getElementById('split-amount-a').textContent = `€${myTotal.toFixed(2)}`;
+  document.getElementById('split-label-b').textContent  = 'Otro progenitor';
+  document.getElementById('split-amount-b').textContent = `€${otherTotal.toFixed(2)}`;
+
+  const list = document.getElementById('gastos-list');
+  if (allGastos.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 16px;color:var(--text-muted);font-size:0.85rem;">Aún no hay gastos registrados.</div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  allGastos.slice(0, 20).forEach(g => {
+    const catInfo = GASTO_CATS[g.cat] || GASTO_CATS.otro;
+    const el = document.createElement('div');
+    el.className = 'gasto-item';
+    const d = g.createdAt?.toDate ? g.createdAt.toDate() : new Date();
+    el.innerHTML = `
+      <div class="gasto-icon">${catInfo.icon}</div>
+      <div class="gasto-info">
+        <div class="gasto-desc">${g.desc}</div>
+        <div class="gasto-meta">${catInfo.label} · ${d.toLocaleDateString('es-ES',{day:'numeric',month:'short'})} · ${g.userName || 'Desconocido'}</div>
+      </div>
+      <div class="gasto-amount">€${(g.amount||0).toFixed(2)}</div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+// ============================================================
+// TELEGRAM WEBHOOK
+// ============================================================
+async function sendTelegramNotification(text) {
+  // Webhook via Cloud Function (igual que tu app original)
+  const url = "https://sendtelegram-jd4jwaesba-uc.a.run.app";
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+  } catch(e) { console.warn('Telegram error:', e); }
+
+  // Adicionalmente, si el usuario configuró token/chatId propio
+  if (userProfile?.tgToken && userProfile?.tgChatId) {
+    try {
+      await fetch(`https://api.telegram.org/bot${userProfile.tgToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: userProfile.tgChatId, text, parse_mode: 'HTML' })
+      });
+    } catch(e) { console.warn('Telegram personal error:', e); }
+  }
+}
+
+function openWebhookModal() {
+  document.getElementById('tg-token-input').value  = userProfile?.tgToken  || '';
+  document.getElementById('tg-chatid-input').value = userProfile?.tgChatId || '';
+  document.getElementById('modal-webhook').classList.remove('hidden');
+}
+
+async function saveWebhook() {
+  const token  = document.getElementById('tg-token-input').value.trim();
+  const chatId = document.getElementById('tg-chatid-input').value.trim();
+  if (!token || !chatId) return showToast('Completa el token y el Chat ID.', 'error');
+
+  try {
+    await db.collection('users').doc(currentUser.uid).update({ tgToken: token, tgChatId: chatId });
+    userProfile.tgToken  = token;
+    userProfile.tgChatId = chatId;
+    closeModal('modal-webhook');
+    // Test notification
+    await sendTelegramNotification('✅ Custodia Familiar conectada correctamente con Telegram.');
+    showToast('Telegram configurado. Revisa tus mensajes.', 'success');
+  } catch(e) {
+    showToast('Error al guardar la configuración.', 'error');
+  }
+}
+
+function openChildNameModal() {
+  document.getElementById('child-name-update-input').value = userProfile?.childName || '';
+  document.getElementById('modal-child-name').classList.remove('hidden');
+}
+
+async function updateChildName() {
+  const name = document.getElementById('child-name-update-input').value.trim();
+  if (!name) return showToast('Introduce un nombre válido.', 'error');
+  try {
+    await db.collection('users').doc(currentUser.uid).update({ childName: name });
+    userProfile.childName = name;
+    document.getElementById('profile-role-display').textContent =
+      (userProfile.role === 'madre' ? 'Madre' : 'Padre') + ' · ' + name;
+    closeModal('modal-child-name');
+    showToast('Nombre actualizado.', 'success');
+  } catch(e) {
+    showToast('Error al actualizar el nombre.', 'error');
+  }
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// Close modals when clicking overlay
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.add('hidden');
+  });
+});
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  toast.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ============================================================
+// SWIPE GESTURE (back navigation)
+// ============================================================
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  // Swipe right from left edge → go home
+  if (dx > 80 && touchStartX < 40) showTab('home');
+}, { passive: true });
+
+// ============================================================
+// DOM READY
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderIcons();
+  // Simulate loading delay for UX
+  setTimeout(() => {
+    if (!currentUser) {
+      hideLoading();
+      showScreen('screen-auth');
+    }
+  }, 2500);
+});
+</script>
+</body>
+</html>
