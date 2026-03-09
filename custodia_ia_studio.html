@@ -18,15 +18,12 @@
             --text: #0f172a;
             --text-light: #64748b;
             --primary: #6366f1;
-            /* Colores de Roles */
             --padre: #3b82f6;
             --padre-bg: #eff6ff;
             --madre: #ec4899;
             --madre-bg: #fdf2f8;
-            /* UI */
             --safe-top: env(safe-area-inset-top);
             --safe-bottom: env(safe-area-inset-bottom);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -35,212 +32,138 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg);
             color: var(--text);
-            line-height: 1.5;
-            overflow-x: hidden;
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        /* --- VISTAS --- */
-        .screen {
-            display: none;
-            flex: 1;
-            overflow-y: auto;
+        /* --- AUTH SCREEN --- */
+        #auth-screen {
+            position: fixed; inset: 0; background: var(--primary);
+            display: flex; align-items: center; justify-content: center; z-index: 3000;
             padding: 20px;
-            padding-top: calc(70px + var(--safe-top));
-            padding-bottom: calc(100px + var(--safe-bottom));
         }
-        .screen.active { display: block; }
+        .auth-card {
+            background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 350px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); text-align: center;
+        }
 
-        /* --- HEADER FIJO --- */
+        /* --- HEADER --- */
         header {
-            position: fixed; top: 0; width: 100%;
-            background: rgba(255,255,255,0.8);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             padding: calc(15px + var(--safe-top)) 20px 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #e2e8f0; z-index: 1000;
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;
         }
+        .header-info h1 { font-size: 18px; font-weight: 800; }
+        .header-info p { font-size: 11px; color: var(--text-light); text-transform: uppercase; font-weight: 700; }
 
-        .header-title h1 { font-size: 18px; font-weight: 800; }
-        .header-title p { font-size: 12px; color: var(--text-light); }
+        /* --- CONTENIDO --- */
+        .content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
+        .view { display: none; animation: fadeIn 0.3s ease; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- CALENDARIO MODERNO --- */
-        .cal-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
-        }
-        .cal-grid {
-            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
-        }
-        .cal-weekday {
-            text-align: center; font-size: 11px; font-weight: 700; color: var(--text-light); padding-bottom: 10px;
-        }
+        /* --- CALENDARIO --- */
+        .cal-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .weekday { text-align: center; font-size: 10px; font-weight: 800; color: var(--text-light); margin-bottom: 5px; }
         .day {
-            aspect-ratio: 1; background: var(--card); border-radius: 12px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-weight: 600; font-size: 14px; position: relative;
-            transition: transform 0.1s; border: 2px solid transparent;
+            aspect-ratio: 1; background: white; border-radius: 12px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+            border: 2px solid #f1f5f9; position: relative;
         }
-        .day:active { transform: scale(0.9); }
+        .day.madre { background: var(--madre-bg); border-color: #fbcfe8; color: var(--madre); }
+        .day.padre { background: var(--padre-bg); border-color: #bfdbfe; color: var(--padre); }
         .day.today { border-color: var(--primary); }
-        
-        .day.padre { background: var(--padre-bg); color: var(--padre); }
-        .day.madre { background: var(--madre-bg); color: var(--madre); }
-        .day.other-month { opacity: 0.2; }
+        .day.other { opacity: 0.2; }
+        .day-label { font-size: 18px; margin-top: 2px; }
 
-        .day-dot {
-            width: 4px; height: 4px; background: currentColor; border-radius: 50%;
-            position: absolute; bottom: 6px;
-        }
-
-        /* --- SOLICITUDES / CARDS --- */
-        .card {
-            background: var(--card); border-radius: 16px; padding: 16px;
-            margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid #f1f5f9;
-        }
-        .btn {
-            width: 100%; padding: 14px; border-radius: 12px; border: none;
-            font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
+        /* --- BOTONES / CARDS --- */
+        .card { background: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-outline { background: #f1f5f9; color: var(--text); }
+        .btn:active { transform: scale(0.96); opacity: 0.8; }
 
-        /* --- NAV INFERIOR --- */
+        /* --- NAVEGACIÓN INFERIOR --- */
         nav {
-            position: fixed; bottom: 0; width: 100%;
-            background: var(--card); border-top: 1px solid #e2e8f0;
-            padding: 10px 20px calc(10px + var(--safe-bottom));
-            display: flex; justify-content: space-around; z-index: 1000;
+            position: fixed; bottom: 0; width: 100%; background: white;
+            padding: 10px 10px calc(10px + var(--safe-bottom));
+            display: flex; justify-content: space-around; border-top: 1px solid #e2e8f0;
         }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center;
-            text-decoration: none; color: var(--text-light); font-size: 10px; font-weight: 600;
-        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-light); font-size: 10px; font-weight: 600; text-decoration: none; border: none; background: none; }
         .nav-item.active { color: var(--primary); }
-        .nav-item i { margin-bottom: 4px; }
 
-        /* --- MODALES --- */
-        .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-            display: none; align-items: flex-end; z-index: 2000;
-        }
-        .modal.open { display: flex; }
-        .modal-content {
-            background: var(--card); width: 100%; border-radius: 24px 24px 0 0;
-            padding: 30px; padding-bottom: calc(30px + var(--safe-bottom));
-            animation: slideUp 0.3s ease-out;
-        }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        /* Estilos de inputs */
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; font-weight: 700; color: var(--text-light); margin-bottom: 6px; }
-        input, select {
-            width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #f1f5f9;
-            background: #f1f5f9; font-size: 16px; /* 16px evita zoom en iOS */
-        }
+        /* TOAST */
+        #toast { position: fixed; top: 50px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 50px; font-size: 13px; z-index: 5000; display: none; }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="header-title">
-            <h1 id="header-child">Mi Niño/a</h1>
-            <p id="header-role">Cargando...</p>
+    <div id="toast"></div>
+
+    <!-- PANTALLA DE ACCESO -->
+    <div id="auth-screen">
+        <div class="auth-card">
+            <h1 style="font-size: 40px; margin-bottom: 10px;">👨‍👩‍👧‍👦</h1>
+            <h2>CustodiaApp</h2>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Accede para ver tu calendario</p>
+            <input type="email" id="email" placeholder="Email" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
+            <input type="password" id="password" placeholder="Contraseña" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #ddd;">
+            <button class="btn btn-primary" onclick="handleAuth()">Entrar / Registrarse</button>
         </div>
-        <div id="user-avatar" style="width: 35px; height: 35px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">?</div>
+    </div>
+
+    <!-- APP PRINCIPAL -->
+    <header>
+        <div class="header-info">
+            <h1 id="display-child">Mi Niño/a</h1>
+            <p id="display-role">Cargando...</p>
+        </div>
+        <button onclick="handleLogout()" style="background:none; border:none; color:var(--text-light)"><i data-lucide="log-out"></i></button>
     </header>
 
-    <!-- PANTALLA: CALENDARIO -->
-    <main id="screen-home" class="screen active">
-        <div class="cal-header">
-            <button class="btn-outline" style="padding: 8px;" onclick="changeMonth(-1)"><i data-lucide="chevron-left"></i></button>
-            <h2 id="month-name">Marzo 2024</h2>
-            <button class="btn-outline" style="padding: 8px;" onclick="changeMonth(1)"><i data-lucide="chevron-right"></i></button>
-        </div>
-        
-        <div class="cal-grid" id="calendar-grid">
-            <!-- Generado por JS -->
-        </div>
-
-        <div style="margin-top: 25px;">
-            <h3>Leyenda</h3>
-            <div style="display: flex; gap: 15px; margin-top: 10px;">
-                <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
-                    <span style="width: 12px; height: 12px; background: var(--padre-bg); border: 1px solid var(--padre); border-radius: 3px;"></span> Padre
-                </div>
-                <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
-                    <span style="width: 12px; height: 12px; background: var(--madre-bg); border: 1px solid var(--madre); border-radius: 3px;"></span> Madre
-                </div>
+    <div class="content">
+        <!-- VISTA CALENDARIO -->
+        <section id="view-home" class="view active">
+            <div class="cal-nav">
+                <button onclick="moveMonth(-1)" class="btn" style="width:auto; padding:8px; background:#f1f5f9">◀</button>
+                <h3 id="month-label">Marzo 2024</h3>
+                <button onclick="moveMonth(1)" class="btn" style="width:auto; padding:8px; background:#f1f5f9">▶</button>
             </div>
-        </div>
-    </main>
+            <div id="calendar-grid" class="month-grid"></div>
+        </section>
 
-    <!-- PANTALLA: SOLICITUDES -->
-    <main id="screen-requests" class="screen">
-        <h2>Solicitudes de Cambio</h2>
-        <p style="color: var(--text-light); margin-bottom: 20px;">Propón un cambio de días al otro progenitor.</p>
-        
-        <div class="card">
-            <form id="request-form">
-                <div class="input-group">
-                    <label>Día solicitado</label>
-                    <input type="date" id="req-date" required>
-                </div>
-                <div class="input-group">
-                    <label>Motivo</label>
-                    <input type="text" id="req-reason" placeholder="Ej. Cumpleaños abuela">
-                </div>
-                <button type="submit" class="btn btn-primary">Enviar Propuesta</button>
-            </form>
-        </div>
-
-        <div id="active-requests-list">
-            <!-- Lista de solicitudes pendientes -->
-        </div>
-    </main>
-
-    <!-- PANTALLA: AJUSTES -->
-    <main id="screen-settings" class="screen">
-        <h2>Ajustes</h2>
-        <div class="card">
-            <div class="input-group">
-                <label>Nombre del hijo/a</label>
-                <input type="text" id="set-child-name" onchange="updateProfile()">
-            </div>
-            <div class="input-group">
-                <label>Mi Rol</label>
-                <select id="set-user-role" onchange="updateProfile()">
+        <!-- VISTA AJUSTES -->
+        <section id="view-settings" class="view">
+            <h2>Configuración</h2>
+            <div class="card">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-light);">Nombre del Niño/a</label>
+                <input type="text" id="input-child" style="width:100%; padding:12px; margin: 8px 0 15px; border-radius:8px; border:1px solid #e2e8f0;">
+                
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-light);">Mi Rol</label>
+                <select id="input-role" style="width:100%; padding:12px; margin: 8px 0 20px; border-radius:8px; border:1px solid #e2e8f0;">
                     <option value="madre">Madre</option>
                     <option value="padre">Padre</option>
                 </select>
+                
+                <button class="btn btn-primary" onclick="saveSettings()">Guardar cambios</button>
             </div>
-        </div>
-        <button onclick="handleLogout()" class="btn btn-outline" style="color: #ef4444;">Cerrar Sesión</button>
-    </main>
+        </section>
+    </div>
 
-    <!-- NAVEGACIÓN -->
     <nav>
-        <a href="javascript:void(0)" class="nav-item active" onclick="nav('home', this)">
-            <i data-lucide="calendar"></i><span>Hoy</span>
-        </a>
-        <a href="javascript:void(0)" class="nav-item" onclick="nav('requests', this)">
-            <i data-lucide="repeat"></i><span>Cambios</span>
-        </a>
-        <a href="javascript:void(0)" class="nav-item" onclick="nav('settings', this)">
-            <i data-lucide="user"></i><span>Perfil</span>
-        </a>
+        <button class="nav-item active" onclick="switchView('home', this)"><i data-lucide="calendar"></i>Hoy</button>
+        <button class="nav-item" onclick="switchView('settings', this)"><i data-lucide="settings"></i>Ajustes</button>
     </nav>
 
-    <!-- SCRIPTS -->
+    <!-- FIREBASE LIBRARIES -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
     <script>
-        // Configuración de Firebase
+        // --- TUS CREDENCIALES ORIGINALES ---
         const firebaseConfig = {
             apiKey: "AIzaSyAwgk4_l0zvaCUCgm1CjqqqXjJHr5KPBjc",
             authDomain: "custodia-familiar.firebaseapp.com",
@@ -249,133 +172,123 @@
             messagingSenderId: "1038952432258",
             appId: "1:1038952432258:web:7608d6a48d8ad8308a6a9b"
         };
+        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // Estado Global
-        let currentUser = null;
+        // --- ESTADO ---
+        let user = null;
         let userData = { role: 'madre', childName: 'Mi Niño/a' };
-        let currentViewDate = new Date();
-        let overrides = {};
+        let currentMonth = new Date();
+        const REF_DATE = new Date(2024, 0, 1); // Lunes base para rotación 7-7
 
-        // 1. Lógica de Rotación 7-7
-        // Fecha de referencia: Un lunes donde empezó el "Padre"
-        const REFERENCE_MONDAY = new Date(2024, 0, 1); // 1 de Enero 2024
-
-        function getCustody(date) {
-            const dateStr = date.toISOString().split('T')[0];
-            if (overrides[dateStr]) return overrides[dateStr];
-
-            const diffTime = date - REFERENCE_MONDAY;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            const diffWeeks = Math.floor(diffDays / 7);
-            
-            // Alterna cada semana
-            return (Math.abs(diffWeeks) % 2 === 0) ? 'padre' : 'madre';
+        // --- AUTH ---
+        async function handleAuth() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+            } catch {
+                try {
+                    await auth.createUserWithEmailAndPassword(email, pass);
+                } catch (e) { showToast("Error: " + e.message); }
+            }
         }
 
-        // 2. Render de Calendario
+        auth.onAuthStateChanged(u => {
+            if(u) {
+                user = u;
+                document.getElementById('auth-screen').classList.add('hidden');
+                syncData();
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+            }
+        });
+
+        function handleLogout() { auth.signOut(); }
+
+        // --- DATOS ---
+        function syncData() {
+            db.collection("users").doc(user.uid).onSnapshot(doc => {
+                if(doc.exists) {
+                    userData = doc.data();
+                    updateUI();
+                } else {
+                    db.collection("users").doc(user.uid).set(userData);
+                }
+            });
+            renderCalendar();
+        }
+
+        function updateUI() {
+            document.getElementById('display-child').innerText = userData.childName;
+            document.getElementById('display-role').innerText = "Viendo como " + userData.role;
+            document.getElementById('input-child').value = userData.childName;
+            document.getElementById('input-role').value = userData.role;
+        }
+
+        async function saveSettings() {
+            const childName = document.getElementById('input-child').value;
+            const role = document.getElementById('input-role').value;
+            await db.collection("users").doc(user.uid).update({ childName, role });
+            showToast("✅ Cambios guardados");
+        }
+
+        // --- CALENDARIO ---
+        function getCustody(date) {
+            const diff = Math.floor((date - REF_DATE) / 86400000);
+            const weeks = Math.floor(diff / 7);
+            return (Math.abs(weeks) % 2 === 0) ? 'padre' : 'madre';
+        }
+
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
+            const y = currentMonth.getFullYear(), m = currentMonth.getMonth();
             
-            const month = currentViewDate.getMonth();
-            const year = currentViewDate.getFullYear();
-            
-            document.getElementById('month-name').textContent = new Intl.DateTimeFormat('es', {month: 'long', year: 'numeric'}).format(currentViewDate);
+            document.getElementById('month-label').innerText = new Intl.DateTimeFormat('es', {month:'long', year:'numeric'}).format(currentMonth);
 
-            // Cabecera de días
-            ['L','M','X','J','V','S','D'].forEach(d => {
-                grid.innerHTML += `<div class="cal-weekday">${d}</div>`;
-            });
+            ['L','M','X','J','V','S','D'].forEach(d => grid.innerHTML += `<div class="weekday">${d}</div>`);
 
-            const firstDay = new Date(year, month, 1).getDay();
-            const offset = firstDay === 0 ? 6 : firstDay - 1;
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const first = new Date(y, m, 1).getDay();
+            const offset = first === 0 ? 6 : first - 1;
+            const totalDays = new Date(y, m + 1, 0).getDate();
 
-            // Espacios mes anterior
-            for(let i=0; i<offset; i++) grid.innerHTML += `<div class="day other-month"></div>`;
+            for(let i=0; i<offset; i++) grid.innerHTML += `<div class="day other"></div>`;
 
-            // Días del mes
-            for(let d=1; d<=daysInMonth; d++) {
-                const date = new Date(year, month, d, 12);
+            for(let d=1; d<=totalDays; d++) {
+                const date = new Date(y, m, d, 12);
                 const role = getCustody(date);
+                const label = role === 'padre' ? '👨‍💼' : '👩‍💼';
                 const isToday = new Date().toDateString() === date.toDateString();
                 
                 grid.innerHTML += `
                     <div class="day ${role} ${isToday ? 'today' : ''}">
                         ${d}
-                        <div class="day-dot"></div>
-                    </div>
-                `;
+                        <div class="day-label">${label}</div>
+                    </div>`;
             }
         }
 
-        // 3. Navegación
-        function nav(screenId, el) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('screen-' + screenId).classList.add('active');
-            el.classList.add('active');
+        function moveMonth(n) { currentMonth.setMonth(currentMonth.getMonth() + n); renderCalendar(); }
+
+        // --- UI UTILS ---
+        function switchView(view, btn) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-'+view).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            btn.classList.add('active');
             lucide.createIcons();
         }
 
-        function changeMonth(dir) {
-            currentViewDate.setMonth(currentViewDate.getMonth() + dir);
-            renderCalendar();
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2500);
         }
 
-        // 4. Firebase Auth & Data
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                currentUser = user;
-                initApp();
-            } else {
-                // Redirigir a login si fuera una app real con página de login separada
-                console.log("No user session");
-                // Para este ejemplo, si no hay sesión, podrías mostrar un prompt
-                auth.signInAnonymously(); // Login simplificado para pruebas
-            }
-        });
-
-        async function initApp() {
-            // Escuchar perfil
-            db.collection("users").doc(currentUser.uid).onSnapshot(doc => {
-                if(doc.exists) {
-                    userData = doc.data();
-                    updateHeader();
-                }
-            });
-
-            // Escuchar cambios de custodia (Overrides)
-            db.collection("overrides").onSnapshot(snap => {
-                overrides = {};
-                snap.forEach(doc => overrides[doc.id] = doc.data().owner);
-                renderCalendar();
-            });
-
-            lucide.createIcons();
-        }
-
-        function updateHeader() {
-            document.getElementById('header-child').textContent = userData.childName;
-            document.getElementById('header-role').textContent = "Perfil: " + userData.role.toUpperCase();
-            document.getElementById('user-avatar').textContent = userData.role[0].toUpperCase();
-            document.getElementById('set-child-name').value = userData.childName;
-            document.getElementById('set-user-role').value = userData.role;
-        }
-
-        async function updateProfile() {
-            const childName = document.getElementById('set-child-name').value;
-            const role = document.getElementById('set-user-role').value;
-            await db.collection("users").doc(currentUser.uid).set({ childName, role }, {merge: true});
-        }
-
-        // Inicializar iconos
         lucide.createIcons();
-        renderCalendar();
-
     </script>
 </body>
 </html>
